@@ -8,14 +8,14 @@
 class PatternGenerator {
 private:
     CustomCharDisplay &display;
-    int sequence[10];     // Max size support up to 10 steps
+    int sequence[10];    
     int sequenceSize;
 
 public:
     PatternGenerator(CustomCharDisplay &displayRef);
-    void pattern(int y);             // Run pattern sequence y times
-    int* getSequence();              // Return pointer to the sequence array
-    int getSequenceSize();           // Return size of the sequence
+    void pattern(int y);         
+    int* getSequence();             
+    int getSequenceSize();           
 };
 
 #endif
