@@ -20,12 +20,14 @@ Button btn1(D12, btn1Action);    // level changing button
 Button btn2(D11, btn2Action);
 Button btn3(D10, btn3Action);
 
+// --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
 #include "mbed.h"
 #include "TextLCD_CC.h"
 #include "TimerDisplay.h"
 #include "CustomCharDisplay.h"
 #include "PatternGenerator.h"
 
+// --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
 TextLCD lcd(D0, D1, D2, D3, D4, D5, TextLCD::LCD16x2);
 CustomCharDisplay display(lcd);
 TimerDisplay timer(lcd);
@@ -33,8 +35,9 @@ PatternGenerator generator(display);
 
 
 int main() {
-    /*==============================Level 1==============================*/
 
+    // --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
+    //Level 1 starts here
     if(level == 1)
     {
         display.welcome(); 
@@ -103,9 +106,10 @@ int main() {
             showLoseScreen(lcd, score);
         }
     }
+    //Level 1 ends here
 
-    /*==============================Level 2==============================*/ 
-
+    // --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
+    //Level 2 starts here
     if(level == 2)
     {
         display.welcome();
@@ -173,9 +177,10 @@ int main() {
             showLoseScreen(lcd, score);
         }
     }
+    //Level 2 ends here
 
-    /*==============================Level 3==============================*/
-
+    // --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
+    //Level 3 starts here
     if(level == 3)
     {
         display.welcome();
@@ -243,12 +248,15 @@ int main() {
             showLoseScreen(lcd, score);
         }
     }
+    //Level 3 ends here
 
     while (true) { }
     
 }
 
-void showLoseScreen(TextLCD &lcd, int score) {
+// --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
+void showLoseScreen(TextLCD &lcd, int score) 
+{
     lcd.cls();
     lcd.locate(0, 0);
     lcd.printf("   YOU LOOSED!   ");
@@ -264,7 +272,9 @@ void showLoseScreen(TextLCD &lcd, int score) {
     thread_sleep_for(2000);
 }
 
-void showWinScreen(TextLCD &lcd, int score) {
+// --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
+void showWinScreen(TextLCD &lcd, int score) 
+{
     lcd.cls();
     lcd.locate(0, 0);
     lcd.printf("    YOU WON!   ");
