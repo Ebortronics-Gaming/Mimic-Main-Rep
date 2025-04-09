@@ -20,10 +20,19 @@ Button btn1(D12, btn1Action);    // level changing button
 Button btn2(D11, btn2Action);
 Button btn3(D10, btn3Action);
 
+#include "mbed.h"
+#include "TextLCD_CC.h"
+#include "TimerDisplay.h"
+#include "CustomCharDisplay.h"
+#include "PatternGenerator.h"
+
+TextLCD lcd(D0, D1, D2, D3, D4, D5, TextLCD::LCD16x2);
+CustomCharDisplay display(lcd);
+TimerDisplay timer(lcd);
+PatternGenerator generator(display);
+
 
 int main() {
-
-    
     /*==============================Level 1==============================*/
 
     if(level == 1)
