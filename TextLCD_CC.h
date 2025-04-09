@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------------------
+//This is a public library
+// Added by Vishwa (Do not modify by all means)
+// Added : 09 April 2025 by Vishwa
+// -----------------------------------------------------------------------------------
+
 #ifndef MBED_TEXTLCD_CC_H
 #define MBED_TEXTLCD_CC_H
 
