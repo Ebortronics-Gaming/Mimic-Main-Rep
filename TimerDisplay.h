@@ -13,12 +13,11 @@ private:
     Thread timerThread;
     int finishedFlag;
 
-    // Internal method run on a separate thread
     void countdownLoop();
 
 public:
     TimerDisplay(TextLCD &lcdRef);
-    void updateDisplay(int startMinutes); // Starts the countdown
+    void updateDisplay(int startMinutes); 
     int isFinished();
 };
 
