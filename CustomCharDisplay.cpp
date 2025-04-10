@@ -138,3 +138,105 @@ void CustomCharDisplay::scoreUpdate() {
     displayChar(10, 14, 0);
     displayChar(10, 13, 0);
 }
+
+void CustomCharDisplay::welcome() {
+    lcd.locate(0,0);
+    lcd.printf("   Loading...   ");
+    displayChar(3, 0, 1);
+    thread_sleep_for(500);
+    displayChar(10, 10, 0);
+    displayChar(10, 11, 0);
+    displayChar(10, 12, 0);
+    lcd.locate(10,0);
+    lcd.printf(".");
+
+    displayChar(3, 1, 1);
+    thread_sleep_for(200);
+    displayChar(3, 2, 1);
+    thread_sleep_for(100);
+    displayChar(3, 3, 1);
+    thread_sleep_for(200);
+    lcd.locate(11,0);
+    lcd.printf(".");
+
+    displayChar(3, 4, 1);
+    thread_sleep_for(300);
+    displayChar(3, 5, 1);
+    thread_sleep_for(200);
+    lcd.locate(12,0);
+    lcd.printf(".");
+
+    thread_sleep_for(500);
+    displayChar(10, 10, 0);
+    displayChar(10, 11, 0);
+    displayChar(10, 12, 0);
+    lcd.locate(10,0);
+    lcd.printf(".");
+
+    displayChar(3, 6, 1);
+    thread_sleep_for(100);
+    displayChar(3, 7, 1);
+    thread_sleep_for(200);
+    displayChar(3, 8, 1);
+    thread_sleep_for(200);
+    lcd.locate(11,0);
+    lcd.printf(".");
+
+    thread_sleep_for(500);
+    lcd.locate(12,0);
+    lcd.printf(".");
+
+    thread_sleep_for(300);
+    displayChar(3, 9, 1);
+    thread_sleep_for(100);
+    displayChar(3, 10, 1);
+    thread_sleep_for(100);
+    displayChar(10, 10, 0);
+    displayChar(10, 11, 0);
+    displayChar(10, 12, 0);
+    lcd.locate(10,0);
+    lcd.printf(".");
+
+    thread_sleep_for(400);
+    displayChar(3, 11, 1);
+    thread_sleep_for(100);
+    lcd.locate(11,0);
+    lcd.printf(".");
+
+    thread_sleep_for(200);
+    displayChar(3, 12, 1);
+    thread_sleep_for(200);
+    displayChar(3, 13, 1);
+    thread_sleep_for(100);
+    lcd.locate(12,0);
+    lcd.printf(".");
+
+    thread_sleep_for(100);
+    displayChar(3, 14, 1);
+    thread_sleep_for(100);
+    displayChar(3, 15, 1);
+    thread_sleep_for(100);
+
+    displayChar(10, 0, 0);
+    displayChar(10, 1, 0);
+    displayChar(10, 2, 0);
+    displayChar(10, 3, 0);
+    displayChar(10, 4, 0);
+    displayChar(10, 5, 0);
+    displayChar(10, 6, 0);
+    displayChar(10, 7, 0);
+    displayChar(10, 8, 0);
+    displayChar(10, 9, 0);
+    displayChar(10, 10, 0);
+    displayChar(10, 11, 0);
+    displayChar(10, 12, 0);
+    displayChar(10, 13, 0);
+    displayChar(10, 14, 0);
+    displayChar(10, 15, 0);
+    lcd.locate(0,0);
+    lcd.printf("    Level 1    ");
+    thread_sleep_for(1000);
+    lcd.locate(0,0);
+    lcd.printf("       Go       ");
+    thread_sleep_for(1000);
+}
