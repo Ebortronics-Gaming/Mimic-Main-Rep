@@ -18,6 +18,7 @@ public:
     void displayChar(int input, int col, int row);
     void defaultDisplay();
     void scoreUpdate();
+    void welcome();
 };
 
 #endif
