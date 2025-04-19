@@ -1,262 +1,49 @@
+// main.cpp
+
 #include "mbed.h"
+#include "TextLCD_CC.h"
+#include "CustomCharDisplay.h"
+#include "TimerDisplay.h"
+#include "PatternGenerator.h"
 #include "joystick.cpp"
 #include "buttons.cpp"
-#include "display.cpp"
 #include "player.cpp"
-#include "patterns.cpp"
-#include <cstdio>
-#include <limits>
-#include <stdio.h>
-#include <array>
 
-Player player;
+// LCD & display objects
+TextLCD lcd(D0, D1, D2, D3, D4, D5, TextLCD::LCD16x2);
+CustomCharDisplay display(lcd);
+TimerDisplay      timer(lcd);
+PatternGenerator  generator(display);
 
-void btn1Action();
-void btn2Action();
-void btn3Action();
+// Button callbacks
+void btn1Action() { 
+    printf("Button 1 pressed\n"); 
+    Player::nextLevel(); 
+}
+void btn2Action() { 
+    printf("Button 2 pressed\n"); 
+    // TODO: implement BACK action 
+}
+void btn3Action() { 
+    printf("Button 3 pressed\n"); 
+    // TODO: implement ENTER/PLAY action 
+}
 
-// Button objects with different pins & callbacks
-Button btn1(D12, btn1Action);    // level changing button
+// Hook up physical buttons (pins D12, D11, D10)
+Button btn1(D12, btn1Action);
 Button btn2(D11, btn2Action);
 Button btn3(D10, btn3Action);
 
-// --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
-#include "mbed.h"
-#include "TextLCD_CC.h"
-#include "TimerDisplay.h"
-#include "CustomCharDisplay.h"
-#include "PatternGenerator.h"
-
-// --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
-TextLCD lcd(D0, D1, D2, D3, D4, D5, TextLCD::LCD16x2);
-CustomCharDisplay display(lcd);
-TimerDisplay timer(lcd);
-PatternGenerator generator(display);
-
-
-int main() {
-
-    // --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
-    //Level 1 starts here
-    if(level == 1)
-    {
-        display.welcome(); 
-        thread_sleep_for(2000);
-        lcd.cls();
-        display.defaultDisplay();
-        timer.updateDisplay(8);
-
-        int i = 0;
-        int score = 0;
-
-        while(exit != 1 && 15-(i+1) != 1 && timer.isFinished() != 1)
-        {
-            generator.pattern(4); 
-            int* seq = generator.getSequence();
-            int* user = joystick.pattern(4);
-
-            bool arraysAreEqual(int a[], int b[]) 
-            {
-                for (int j = 0; j < 4; j++) 
-                {
-                    if (a[j] != b[j]) 
-                    {
-                        return false; 
-                    }
-                }
-                return true;
-            }
-
-            if (arraysAreEqual(seq, user)) 
-            {
-                check = 2;
-                score += 1;
-                display.scoreUpdate();
-                lcd.locate(13,0);
-                lcd.printf("%d", score);
-
-            } 
-            else 
-            {
-                check = 1;
-            }
-
-            if(check == 1)
-            {
-                display.displayChar(3, 15-(i+1), 1);
-                thread_sleep_for(500);
-                ++i;
-                check = 0;
-            }
-            else if(check == 2)
-            {
-                display.displayChar(3, 15-(i+1), 1);
-                thread_sleep_for(500);
-                display.displayChar(10, 15-(i+1), 1);
-                check = 0;
-            }
-        }
-
-        if(timer.isFinished() == 1)
-        {
-            showWinScreen(lcd, score);
-        }
-        if(15-(i+1) == 1)
-        {
-            showLoseScreen(lcd, score);
-        }
+// Utility: compare two int arrays
+static bool arraysAreEqual(const int* a, const int* b, int size) {
+    for (int i = 0; i < size; ++i) {
+        if (a[i] != b[i]) return false;
     }
-    //Level 1 ends here
-
-    // --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
-    //Level 2 starts here
-    if(level == 2)
-    {
-        display.welcome();
-        thread_sleep_for(2000);
-        lcd.cls();
-        display.defaultDisplay();
-        timer.updateDisplay(6);
-
-        int i = 0;
-        int score = 0;
-
-        while(exit != 1 && 15-(i+1) != 1 && timer.isFinished() != 1)
-        {
-            generator.pattern(6); 
-            int* seq = generator.getSequence();
-            int* user = joystick.pattern(6);
-
-            bool arraysAreEqual(int a[], int b[]) 
-            {
-                for (int j = 0; j < 6; j++) 
-                {
-                    if (a[j] != b[j]) 
-                    {
-                        return false; 
-                    }
-                }
-                return true;
-            }
-
-            if (arraysAreEqual(seq, user)) 
-            {
-                check = 2;
-                score += 1;
-                display.scoreUpdate();
-                lcd.locate(13,0);
-                lcd.printf("%d", score);
-            } 
-            else 
-            {
-                check = 1;
-            }
-
-            if(check == 1)
-            {
-                display.displayChar(3, 15-(i+1), 1);
-                thread_sleep_for(500);
-                ++i;
-                check = 0;
-            }
-            else if(check == 2)
-            {
-                display.displayChar(3, 15-(i+1), 1);
-                thread_sleep_for(500);
-                display.displayChar(10, 15-(i+1), 1);
-                check = 0;
-            }
-        }
-        
-        if(timer.isFinished() == 1)
-        {
-            showWinScreen(lcd, score);
-        }
-        if(15-(i+1) == 1)
-        {
-            showLoseScreen(lcd, score);
-        }
-    }
-    //Level 2 ends here
-
-    // --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
-    //Level 3 starts here
-    if(level == 3)
-    {
-        display.welcome();
-        thread_sleep_for(2000);
-        lcd.cls();
-        display.defaultDisplay();
-        timer.updateDisplay(8);
-
-        int i = 0;
-        int score = 0;
-
-        while(exit != 1 && 15-(i+1) != 1 && timer.isFinished() != 1)
-        {
-            generator.pattern(8); 
-            int* seq = generator.getSequence();
-            int* user = joystick.pattern(8);
-
-            bool arraysAreEqual(int a[], int b[]) 
-            {
-                for (int j = 0; j < 8; j++) 
-                {
-                    if (a[j] != b[j]) 
-                    {
-                        return false; 
-                    }
-                }
-                return true;
-            }
-
-            if (arraysAreEqual(seq, user)) 
-            {
-                check = 2;
-                score += 1;
-                display.scoreUpdate();
-                lcd.locate(13,0);
-                lcd.printf("%d", score);
-            } 
-            else 
-            {
-                check = 1;
-            }
-
-            if(check == 1)
-            {
-                display.displayChar(3, 15-(i+1), 1);
-                thread_sleep_for(500);
-                ++i;
-                check = 0;
-            }
-            else if(check == 2)
-            {
-                display.displayChar(3, 15-(i+1), 1);
-                thread_sleep_for(500);
-                display.displayChar(10, 15-(i+1), 1);
-                check = 0;
-            }
-        }
-
-        if(timer.isFinished() == 1)
-        {
-            showWinScreen(lcd, score);
-        }
-        if(15-(i+1) == 1)
-        {
-            showLoseScreen(lcd, score);
-        }
-    }
-    //Level 3 ends here
-
-    while (true) { }
-    
+    return true;
 }
 
-// --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
-void showLoseScreen(TextLCD &lcd, int score) 
-{
+// End‑of‑game screens (unchanged)
+static void showLoseScreen(TextLCD &lcd, int score) {
     lcd.cls();
     lcd.locate(0, 0);
     lcd.printf("   YOU LOOSED!   ");
@@ -272,37 +59,90 @@ void showLoseScreen(TextLCD &lcd, int score)
     thread_sleep_for(2000);
 }
 
-// --- Author: Vishwa | Added: 09-Apr-2025 | Last Modified: 09-Apr-2025 | Do not modify without prior discussion with the author ---
-void showWinScreen(TextLCD &lcd, int score) 
-{
+static void showWinScreen(TextLCD &lcd, int score) {
     lcd.cls();
     lcd.locate(0, 0);
     lcd.printf("    YOU WON!   ");
-    lcd.locate(0,1);
+    lcd.locate(0, 1);
     lcd.printf("Your Score : %d", score);
     thread_sleep_for(2000);
-    
+
     lcd.cls();
     lcd.locate(0, 0);
     lcd.printf("   Well Done!   ");
-    lcd.locate(0,1);
+    lcd.locate(0, 1);
     lcd.printf(" Rest Your Eyes ");
     thread_sleep_for(2000);
 }
 
+// Core level loop
+static void playLevel(int durationMinutes) {
+    // show loading + “Level X” + “Go”
+    display.welcome();
 
-// Button Action Functions:
-void btn1Action() {     // increases level
-    printf("Button 1 is pressed\n");
-    player.NextLevel();
+    // initial HUD: arrows, timer icon, hearts, monsters, player
+    display.defaultDisplay();
+
+    // start countdown timer (minutes)
+    timer.updateDisplay(durationMinutes);
+
+    // play until time runs out or lives/monsters exhausted
+    while (!timer.isFinished()
+           && Player::hearts   > 0
+           && Player::monsterNum > 0) 
+    {
+        // flash a pattern of length arrowNum
+        int len = Player::arrowNum;
+        generator.pattern(len);
+
+        // get generated and user sequences
+        int* seq  = generator.getSequence();
+        int* user = joystick.pattern(len);
+
+        if (arraysAreEqual(seq, user, len)) {
+            // correct: +1 score, update display, decrement monster count
+            Player::addScore(1);
+            display.scoreUpdate();
+            Player::minusMonster();
+            display.updateMonsters();
+        } else {
+            // wrong: lose a heart, update display
+            Player::minusHearts();
+            display.updateLives();
+        }
+
+        // brief pause before next round
+        thread_sleep_for(200);
+    }
+
+    // show appropriate end‐of‐level screen
+    if (Player::monsterNum == 0) {
+        showWinScreen(lcd, Player::score);
+    } else {
+        showLoseScreen(lcd, Player::score);
+    }
 }
 
-void btn2Action() {
-    printf("Button 2 is pressed\n");
-    // to be continued...
-}
+int main() {
+    // reset everything to level 1
+    Player::ResetLevel();
 
-void btn3Action() {
-    printf("Button 3 is pressed\n");
-    // to be continued...
+    // durations per level in minutes (adjust as preferred)
+    const int levelDurations[4] = { 8, 6, 8, 6 };
+
+    // run through all 4 levels
+    for (int lvl = 1; lvl <= 4; ++lvl) {
+        Player::setLevel(lvl);
+        playLevel(levelDurations[lvl - 1]);
+
+        // if player lost (hearts == 0), stop advancing
+        if (Player::hearts == 0) {
+            break;
+        }
+    }
+
+    // keep program alive
+    while (true) {
+        thread_sleep_for(1000);
+    }
 }
