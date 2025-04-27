@@ -1,62 +1,36 @@
-// CustomCharDisplay.h
+// File: CustomCharDisplay.h
+
 #ifndef CUSTOMCHARDISPLAY_H
 #define CUSTOMCHARDISPLAY_H
 
 #include "TextLCD_CC.h"
-#include "player.cpp"   // Access Player::hearts, Player::monsterNum, Player::level
+#include "player.cpp"   // to read Player::score and Player::monsterNum
 
 /**
  * CustomCharDisplay
  * -----------------
- * Manages loading and drawing of custom characters,
- * and renders HUD elements (lives, monsters, timer, score, etc.)
- * based on the Player class state.
+ * Loads custom CGRAM characters, and renders the HUD:
+ *   - Big arrows
+ *   - Timer icon
+ *   - Current score (3-pixel bar)
+ *   - Monster icons (mistakes)
+ *   - Player icon
  */
 class CustomCharDisplay {
 public:
-    /// Constructor: pass in your TextLCD instance
+    // Constructor: uploads all custom characters
     CustomCharDisplay(TextLCD &lcdRef);
 
-    /**
-     * Draw a custom character by index at (col, row).
-     * input:
-     *   0 = timer
-     *   1 = heart
-     *   2 = player
-     *   3 = monster
-     *   4 = bigRight
-     *   5 = bigLeft
-     *   6 = up
-     *   7 = down
-     *   8 = left arrow
-     *   9 = right arrow
-     *  10 = blank
-     */
-    void displayChar(int input, int col, int row);
-
-    /**
-     * Render the default game HUD:
-     *   • big arrows framing play area
-     *   • timer icon
-     *   • hearts (lives)
-     *   • monsters
-     *   • player icon
-     */
-    void defaultDisplay();
-
-    /// Update the score display at top‑right using Player::score
-    void scoreUpdate();
-
-    /**
-     * Show loading/welcome animation,
-     * then dynamically display "Level X" (Player::level), then "Go"
-     */
+    // Loading → “Level X” → “Go!” animation
     void welcome();
 
-    /// Draw hearts based on Player::hearts
-    void updateLives();
+    // Draw big arrows, timer icon, score bar, monsters, player icon
+    void defaultDisplay();
 
-    /// Draw monsters based on Player::monsterNum
+    // Update the three-pixel score at top-right
+    void scoreUpdate();
+
+    // Draw one monster icon per mistake on row 1
     void updateMonsters();
 
 private:
