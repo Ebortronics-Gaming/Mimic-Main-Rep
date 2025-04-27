@@ -1,37 +1,50 @@
 #include "mbed.h"
-#include <stdio.h>
-//Communciating what analogue pins the y value and the x value will be read from 
-AnalogIn y(A0);
-AnalogIn x(A1);
-class joystick
-{
+#include <stdint.h>
 
-//Defiining the array which will store the moves by the user 
-uint8_t UserIn[4];
-uint8_t array_index = 0;
+// Adjust these after testing on your joystick
+#define JOY_CENTER        0.5f
+#define JOY_THRESHOLD     0.15f
+#define MAX_JOYSTICK_MOVES 20
 
-//float values of the y value and x value from the joystick
-    float y_val;
-    float x_val;
-// Thresholds (tune these based on testing)
-#define JOY_CENTER 2048  // Middle of 12-bit ADC (range 0–4095)
-#define THRESHOLD 1000
-void storeplayermoves(float y_val,float x_val) 
-     { 
-        if (array_index >4 && y_val!=JOY_CENTER + THRESHOLD && x_val!=JOY_CENTER + THRESHOLD){
-        thread_sleep_for(400);
+class joystick {
+public:
+    // ctor: default X = A1, Y = A0
+    joystick(PinName xPin = A1, PinName yPin = A0)
+      : _xAxis(xPin), _yAxis(yPin), _moveCount(0) {}
 
-        if (y_val > JOY_CENTER + THRESHOLD) {
-            UserIn[array_index++] = 6;  // UP 
-        } else if (y_val < JOY_CENTER - THRESHOLD) {
-            UserIn[array_index++] = 7;  // DOWN
-        } else if (x_val < JOY_CENTER - THRESHOLD) {
-            UserIn[array_index++] = 8;  // LEFT
-        } else if (x_val > JOY_CENTER + THRESHOLD) {
-            UserIn[array_index++] = 9;  // RIGHT
+    // Initialize / reset the buffer
+    void begin() {
+        clearMoves();
+    }
+
+    // Call periodically; if moved past threshold, record one direction
+    void update() {
+        float x = _xAxis.read();
+        float y = _yAxis.read();
+
+        if (_moveCount < MAX_JOYSTICK_MOVES) {
+            if      (y > JOY_CENTER + JOY_THRESHOLD)      _moves[_moveCount++] = 6; // UP
+            else if (y < JOY_CENTER - JOY_THRESHOLD)      _moves[_moveCount++] = 7; // DOWN
+            else if (x < JOY_CENTER - JOY_THRESHOLD)      _moves[_moveCount++] = 8; // LEFT
+            else if (x > JOY_CENTER + JOY_THRESHOLD)      _moves[_moveCount++] = 9; // RIGHT
         }
-      }
-     }
-};
+    }
 
-class joystick {};
+    // Erase all recorded moves
+    void clearMoves() {
+        _moveCount = 0;
+    }
+
+    // Copy out current buffer and count
+    void getMoves(uint8_t* outArray, uint8_t &outCount) const {
+        outCount = _moveCount;
+        for (uint8_t i = 0; i < _moveCount; ++i) {
+            outArray[i] = _moves[i];
+        }
+    }
+
+private:
+    AnalogIn  _xAxis, _yAxis;
+    uint8_t   _moves[MAX_JOYSTICK_MOVES];
+    uint8_t   _moveCount;
+};
