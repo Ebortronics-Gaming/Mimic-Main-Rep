@@ -1,25 +1,18 @@
-// -----------------------------------------------------------------------------------
-// Developed by Vishwa (Do not modify without prior discussion)
-// Last Modified : 09 April 2025 by author 
-// Please consult the original author before making any changes to ensure consistency
-// -----------------------------------------------------------------------------------
-
 #include "PatternGenerator.h"
+#include "display.h"
 #include <cstdlib>
 #include <ctime>
 
-PatternGenerator::PatternGenerator(CustomCharDisplay &dispRef) : display(dispRef), sequenceSize(0) {}
+PatternGenerator::PatternGenerator(display &dispRef) : disp(dispRef), sequenceSize(0) {}
 
 void PatternGenerator::pattern(int y) {
     sequenceSize = y;   
-
     for (int i = 0; i < y; i++) {
         srand(time(NULL));
         int num = (rand() % 4) + 6;
         sequence[i] = num;
-        display.displayChar(num, 2, 0);
+        disp.flashArrow(num, 0);
         thread_sleep_for(num*100);
-        display.displayChar(10,2,0);
         thread_sleep_for(num*100);
     }
 }
