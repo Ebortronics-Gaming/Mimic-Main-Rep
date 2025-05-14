@@ -1,44 +1,62 @@
-// File: main.cpp
-
 #include "mbed.h"
 #include "TextLCD_CC.h"
+#include "joystick.h"
+#include "buttons.h"
+#include "player.h"
+#include "display.h"
+#include "PatternGenerator.h"
+#include "TimerDisplay.h"
+#include <cstdlib>
+#include <ctime>
 
-#include "joystick.h"           // joystick.begin(), update(), clearMoves(), getMoves()
-#include "buttons.h"            // Button interrupt abstraction (if you need it)
-#include "player.h"             // static Player::reset(), setLevel(), addScore(), addMonster(), isGameOver()
-#include "displayClass.h"       // displayClass.begin(), displayMenuScreen(), displayXXX()...
-#include "PatternGenerator.h"   // PatternGenerator::pattern(), getSequence(), getSequenceSize()
-#include "TimerDisplay.h"       // timer.updateDisplay(), timer.isFinished()
-
-// —————————————— YOUR HARDWARE PINOUT ——————————————
-// Buttons on D6, D7, D8 (Home, Back, Enter)
 #define PIN_BUTTON_HOME   D6
 #define PIN_BUTTON_BACK   D7
 #define PIN_BUTTON_ENTER  D8
-
-// Joystick axes on A0 (X), A1 (Y)
 #define PIN_JOY_X         A0
 #define PIN_JOY_Y         A1
-
-// Game runs for 10 minutes
 #define GAME_DURATION_MIN 10
 
-// ————————————————————————————————————————————————————————
+// Global flags set by ISRs
+volatile bool homePressed  = false;
+volatile bool enterPressed = false;
+volatile bool backPressed  = false;
+
+// ISR callbacks
+void onHome()  { homePressed  = true; }
+void onEnter() { enterPressed = true; }
+void onBack()  { backPressed  = true; }
 
 int main() {
-    // 1) Construct & wire up all your peripherals
-    TextLCD_CC     lcd(D0, D1, D2, D3, D4, D5, TextLCD::LCD16x2);
-    displayClass   display(lcd, PIN_BUTTON_HOME, PIN_BUTTON_BACK, PIN_BUTTON_ENTER);
-    joystick       stick(PIN_JOY_X, PIN_JOY_Y);
-    PatternGenerator generator(display);
-    TimerDisplay   timer(lcd);
+    // Seed RNG once
+    srand(time(NULL));
 
-    // 2) Reset everything to a known state
-    display.begin();       // clear screen, load custom chars, etc.
-    stick.begin();         // clear joystick buffer
-    Player::reset();       // score=0, level=1, arrowNum=4, monsterNum=0
+    // 4-bit LCD wiring: RS=D0, E=D1, DB4–DB7=D2–D5
+    TextLCD lcd(
+        D0, D1,
+        D2, D3, D4, D5,
+        TextLCD::LCD16x2
+    );
 
-    // 3) Our state machine
+    // Instantiate everything
+    display         disp(lcd, PIN_BUTTON_HOME, PIN_BUTTON_BACK, PIN_BUTTON_ENTER);
+    Joystick        stick(PIN_JOY_X, PIN_JOY_Y);
+    PatternGenerator generator(disp);
+    TimerDisplay    timer(lcd);
+
+    // Hook up button interrupts
+    Button btnHome(PIN_BUTTON_HOME,  onHome);
+    Button btnEnter(PIN_BUTTON_ENTER, onEnter);
+    Button btnBack(PIN_BUTTON_BACK,   onBack);
+
+    // Init
+    disp.begin();
+    stick.begin();
+    Player::reset();
+
+    // Show welcome animation once
+    disp.displayWelcomeMessage("Loading...");
+
+    // Our state-machine
     enum State {
         STATE_MENU,
         STATE_HIGHSCORE,
@@ -54,81 +72,66 @@ int main() {
 
     while (true) {
         switch (state) {
-            // ——————————————————————————————— MENU & NAVIGATION ―――――――――――
             case STATE_MENU:
-                // Show your main menu (High Score, How To Play, Game Story, Settings, Play)
-                display.displayMenuScreen();
-                // The displayClass should set display.currentSelection to one of:
-                //   "High Score", "How To Play", "Game Story", "Settings", or "Play"
-                if (display.currentSelection == "High Score") {
-                    state = STATE_HIGHSCORE;
-                } else if (display.currentSelection == "How To Play") {
-                    state = STATE_HOWTO;
-                } else if (display.currentSelection == "Game Story") {
-                    state = STATE_STORY;
-                } else if (display.currentSelection == "Settings") {
-                    state = STATE_SETTINGS;
-                } else if (display.currentSelection == "Play") {
-                    state = STATE_DIFFICULTY;
-                }
+                disp.displayMenuScreen(stick, enterPressed, homePressed, backPressed);
+                if      (disp.currentSelection == "High Score")   state = STATE_HIGHSCORE;
+                else if (disp.currentSelection == "How To Play")  state = STATE_HOWTO;
+                else if (disp.currentSelection == "Game Story")   state = STATE_STORY;
+                else if (disp.currentSelection == "Settings")     state = STATE_SETTINGS;
+                else /* "Play" */                                 state = STATE_DIFFICULTY;
+                enterPressed = homePressed = backPressed = false;
                 break;
 
             case STATE_HIGHSCORE:
-                // Pong your stored high score
-                display.displayHighScore(Player::score);
+                disp.displayHighScore(Player::score);
                 state = STATE_MENU;
                 break;
 
             case STATE_HOWTO:
-                // Show instructions
-                display.displayInstructions();
+                disp.displayInstructions(stick, enterPressed, backPressed, homePressed);
                 state = STATE_MENU;
                 break;
 
             case STATE_STORY:
-                // Show game story
-                display.displayStory();
+                disp.displayStory(stick, enterPressed, backPressed, homePressed);
                 state = STATE_MENU;
                 break;
 
             case STATE_SETTINGS:
-                // Show settings screen
-                display.displaySettings();
+                disp.displaySettings(stick, enterPressed, backPressed, homePressed);
                 state = STATE_MENU;
                 break;
 
-            // ——————————————————————————————— DIFFICULTY PICK ―――――――――――
             case STATE_DIFFICULTY:
-                // Let user pick level 1–3 (or more)
-                display.displayDifficultyPage();
-                // The displayClass writes the chosen level into display.level
-                Player::setLevel(display.level);
-                // Start the 10-minute countdown
-                timer.updateDisplay(GAME_DURATION_MIN);
-                state = STATE_PLAY;
+                disp.displayDifficultyPage(stick, enterPressed, backPressed, homePressed);
+                if (enterPressed) {
+                    Player::setLevel(disp.level);
+                    timer.updateDisplay(GAME_DURATION_MIN);
+                    state = STATE_PLAY;
+                } else {
+                    state = STATE_MENU;
+                }
+                enterPressed = homePressed = backPressed = false;
                 break;
 
-            // ——————————————————————————————— GAMEPLAY LOOP ―――――――――――
             case STATE_PLAY: {
-                // Draw the HUD: arrows, timer, score, monsters, player icon
-                display.defaultDisplay();
-
-                // 1) Generate & flash new pattern of length arrowNum
+                disp.defaultDisplay();
                 generator.pattern(Player::arrowNum);
                 int* pattern = generator.getSequence();
-                int  patLen  = generator.getSequenceSize();
+                uint8_t moveCount = 0, userMoves[20];
+                Timer inputTimer; 
+                inputTimer.start();
+                homePressed = false;
 
-                // 2) Record exactly arrowNum joystick moves
-                stick.clearMoves();
-                uint8_t userMoves[20];
-                uint8_t moveCount = 0;
-                while (moveCount < Player::arrowNum) {
+                while (moveCount < Player::arrowNum
+                       && inputTimer.read_ms() < 1000
+                       && !homePressed) {
                     stick.update();
-                    ThisThread::sleep_for(100);
                     stick.getMoves(userMoves, moveCount);
+                    ThisThread::sleep_for(50);
                 }
+                inputTimer.stop();
 
-                // 3) Compare
                 bool correct = true;
                 for (int i = 0; i < Player::arrowNum; ++i) {
                     if (userMoves[i] != pattern[i]) {
@@ -138,39 +141,29 @@ int main() {
                 }
 
                 if (correct) {
-                    // +1 point
                     Player::addScore();
-                    display.scoreUpdate();
+                    disp.scoreUpdate();
                 } else {
-                    //  +1 monster (mistake)
                     Player::addMonster();
-                    display.updateMonsters();
+                    disp.updateMonsters();
                 }
 
-                // 4) Check for end‐of‐game
-                if (Player::isGameOver()) {
-                    state = STATE_GAMEOVER;
-                } else if (timer.isFinished()) {
-                    state = STATE_WIN;
-                }
-                // else stay in STATE_PLAY for next round
+                if      (homePressed)           state = STATE_MENU;
+                else if (Player::isGameOver())  state = STATE_GAMEOVER;
+                else if (timer.isFinished())    state = STATE_WIN;
             }   break;
 
-            // ——————————————————————————————— GAME OVER / WIN ―――――――――――
             case STATE_GAMEOVER:
-                // Show a Game Over screen & final score
-                display.displayGameOverScreen(Player::monsterNum);
+                disp.displayGameOverScreen(Player::monsterNum);
                 state = STATE_MENU;
                 break;
 
             case STATE_WIN:
-                // Show Win screen & final score
-                display.displayWinScreen(Player::score);
+                disp.displayWinScreen(Player::score);
                 state = STATE_MENU;
                 break;
         }
 
-        // small delay to debounce / avoid busy‐spin
         ThisThread::sleep_for(50);
     }
 }
