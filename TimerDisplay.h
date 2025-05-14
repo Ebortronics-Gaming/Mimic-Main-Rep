@@ -1,9 +1,3 @@
-// -----------------------------------------------------------------------------------
-// Developed by Vishwa (Do not modify without prior discussion)
-// Last Modified : 09 April 2025 by author 
-// Please consult the original author before making any changes to ensure consistency
-// -----------------------------------------------------------------------------------
-
 #ifndef TIMERDISPLAY_H
 #define TIMERDISPLAY_H
 
