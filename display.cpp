@@ -1,609 +1,285 @@
-#include "mbed.h"
-#include "TextLCD_CC.h" 
-#include "CustomCharDisplay.h"
+#include "display.h"
+#include <cstring>
 
 bool difficultyPageFlag = false;
 
-class displayClass : public CustomCharDisplay{
-    private:
-        int selectedCol = -1;
-        Ticker arrowTicker;
-        bool flashing = false;
-    public:
-        //Stores the level the player wants
-        int level = 0;
-        //Stores the menu Screen Option Selection (High Score, How To Play, Game Story, Settings)
-        string currentSelection = "";
-        //Stores either to display the sound or high score settings screen
-        string selectedSetting = "";
-        //Stores if the user wants the sound on or off
-        string soundSetting = "";
-        //Stores if the user wants to keep or reset their high score
-        string highScoreSetting = "";
-        
-        //Displays Welcome message when console is powered on
-        void displayWelcomeMessage(const char* msg) {
-            int len = strlen(msg);
-            int width = 16;
-            int iconGap = 1;
-            int numIcons = 4;
-            
+display::display(TextLCD &lcdRef, PinName btnHome, PinName btnBack, PinName btnEnter)
+    : CustomCharDisplay(lcdRef), selectedCol(-1), flashing(false), level(1),
+      currentSelection("Play"), selectedSetting("Sound"), soundSetting("On"), highScoreSetting("Keep")
+{
+}
 
-            for(int i = 0; i <= len + width ; i++){
-                lcd.cls();
-                lcd.locate(0,0);
+void display::begin() {
+    cls();
+}
 
-                for(int j = 0; j < width; j++){
-                    int index = i + j -(width - 1);
-                    
-                    if ((index >= 0) && (index < len)){
-                        lcd.putc(msg[index]);
-                    }
-                    else{
-                        lcd.putc(' ');
-                    }    
-                } 
+void display::flashArrow(int id, int row) {
+       displayChar(id, 7, row); // or whatever col/row you want
+       thread_sleep_for(300);
+       locate(7, row);
+       putc(' ');
+   }
 
-                for (int k = 0; k< numIcons; k++){
-                    int icon = (k==0) ? 2:3;
-                    int col = i - (numIcons-1-k)*(iconGap+1);
-
-                    if ((col >= 0) && (col < width)){
-                        displayChar(icon, col, 1);
-                    }
-                }
-
-                thread_sleep_for(300);
-            }
-            lcd.cls();
-        }
-
-        void displayArrow(int col){ 
-            displayChar(5,col,1);
-        }
-
-        void clearArrow(int col, int row){
-            lcd.locate(col , row);
-            lcd.putc(' ');
-        }
-
-        void flashArrowDifficulty(int col){
-            if ((level != 0) && (selectedCol != -1)){
-                if (flashing){
-                    clearArrow(selectedCol , 1);
-                }
-                else {
-                    displayArrow(selectedCol);
-                }
-                flashing = !flashing;
-            }
-        }
-
-        //Displays Difficulty Page
-        void displayDifficultyPage(){
-            difficultyPageFlag = true;
-            lcd.cls();
-
-            lcd.locate(0,0);
-            lcd.printf("Difficulty Page");
-
-            lcd.locate(3,1);
-            lcd.putc('1');
-
-            lcd.locate(8,1);
-            lcd.putc('2');
-
-            lcd.locate(13,1);
-            lcd.putc('3');
-
-            while(true){
-                if(b1 == 1) handleButtonPressDisplay(1,2);
-                if(b2 == 1) handleButtonPressDisplay(2,7);
-                if(b3 == 1) handleButtonPressDisplay(3,12);
-                thread_sleep_for(100);
-            }
-        }
-
-        //Callback Function for Button
-        void handleButtonPressDisplay(int pressedLevel , int col){
-            if (level == pressedLevel){
-                arrowTicker.detach();
-                lcd.cls();
-                difficultyPageFlag = false;
-                selectedCol = -1;
+void display::displayWelcomeMessage(const char* msg) {
+    int len = 0;
+    while (msg[len] != '\0') ++len;
+    int width = 16;
+    int iconGap = 1;
+    int numIcons = 4;
+    for(int i = 0; i <= len + width ; i++){
+        cls();
+        locate(0,0);
+        for(int j = 0; j < width; j++){
+            int index = i + j -(width - 1);
+            if ((index >= 0) && (index < len)){
+                putc(msg[index]);
             }
             else{
-                level = pressedLevel;
-                selectedCol = col;
-                flashing = false;
-                arrowTicker.detach();
-
-                lcd.locate(2,1);
-                lcd.putc(' ');
-                lcd.locate(7,1);
-                lcd.putc(' ');
-                lcd.locate(12,1);
-                lcd.putc(' ');
-
-                arrowTicker.attach(callback(this , &displayClass::flashArrowDifficulty), 500ms);
-            }
-
-            while(((pressedLevel == 1) && (b1 == 1)) || ((pressedLevel == 2) && (b2 == 1)) || ((pressedLevel == 3) && (b3 == 1))){
-                thread_sleep_for(100);
+                putc(' ');
             }
         }
-
-        //Flashing an arrow char function
-        flashArrow(int col, int row){
-            while(true){
-                displayChar(9,col,row);
-                displayChar(10,col,row);
+        for (int k = 0; k< numIcons; k++){
+            int icon = (k==0) ? 2:3;
+            int col = i - (numIcons-1-k)*(iconGap+1);
+            if ((col >= 0) && (col < width)){
+                displayChar(icon, col, 1);
             }
         }
+        thread_sleep_for(300);
+    }
+    cls();
+}
 
-        //Displays home page screen
-        void displayHomePage(){
-            lcd.cls():
-            lcd.locate(0,0);
-            lcd.printf("MIMIC")
-            lcd.locate(12,0);
-            lcd.printf("Play");
-            lcd.locate(12,1);
-            lcd.printf("Menu");
+void display::displayArrow(int col){
+    displayChar(5,col,1);
+}
 
-            displayChar(1,5,0);
-            displayChar(1,6,0);
-            displayChar(1,7,0);
+void display::clearArrow(int col, int row){
+    locate(col , row);
+    putc(' ');
+}
 
-            displayChar(4,11,0);
-            displayChar(4,1,1);
-            displayChar(4,2,1);
-            displayChar(4,3,1);
-            displayChar(4,4,1);
-            displayChar(4,11,1);
-
-            displayChar(2,0,1);
-            displayChar(3,5,1);
-            displayChar(3,6,1);
-            displayChar(3,7,1);
-
-            flashArrow(10,0);
-
-            while(true){
-                if(joystick == "down"){
-                    displayChar(10,10,0);
-                    flashArrow(10,1);
-                    if(joystick == "up"){
-                        displayChar(10,10,1);
-                        flashArrow(10,0);
-                    }
-                }
-                
-            }
+void display::flashArrowDifficulty(int col){
+    if ((level != 0) && (selectedCol != -1)){
+        if (flashing){
+            clearArrow(selectedCol , 1);
         }
-
-        //Displays menu screen
-        void displayMenuScreen(){
-            tempCurrentSelection = "";
-            lcd.cls();
-            while(true){ 
-                lcd.locate(4,0);
-                lcd.printf("High Score");
-                flashArrow(3,0);
-                tempCurrentSelection = "High Score";
-                thread_sleep_for(200);
-
-                if((joystick == "down") && (tempCurrentSelection == "High Score")){
-                    lcd.printf("How To Play");  
-                    tempCurrentSelection = "How To Play";  
-                    thread_sleep_for(200);
-                }
-
-                if((joystick == "up") && (tempCurrentSelection == "How To Play")){
-                    lcd.printf("High Score   ");  
-                    tempCurrentSelection = "High Score";  
-                    thread_sleep_for(200);
-                }
-
-                if((joystick == "down") && (tempCurrentSelection == "How To Play")){
-                    lcd.printf("Game Story   ");  
-                    tempCurrentSelection = "Game Story";  
-                    thread_sleep_for(200);
-                }
-
-                if((joystick == "up") && (tempCurrentSelection == "Game Story")){
-                    lcd.printf("How To Play   ");  
-                    tempCurrentSelection = "How To Play"; 
-                    thread_sleep_for(200); 
-                }
-
-                if((joystick == "down") && (tempCurrentSelection == "Game Story")){
-                    lcd.printf("Settings     ");  
-                    tempCurrentSelection = "Settings"; 
-                    thread_sleep_for(200); 
-                }
-
-                if((joystick == "up") && (tempCurrentSelection == "Settings")){
-                    lcd.printf("Game Story    ");  
-                    tempCurrentSelection = "Game Story";
-                    thread_sleep_for(200);  
-                }
-
-                if(b1 == 1){
-                    currentSelection = tempCurrentSelection;
-                    break;
-                }
-            }
+        else {
+            displayArrow(selectedCol);
         }
-        //Displays High Score
-        void displayHighScore(int score){
-            lcd.cls();
-            lcd.locate(1,0);
-            lcd.printf("This is your");
-            lcd.locate(1,1);
-            lcd.printf("high score:");
-            lcd.locate(12,1);
-            lcd.printf("%d",score);
-            thread_sleep_for(4000);
-            lcd.cls();
+        flashing = !flashing;
+    }
+}
+
+void display::displayMenuScreen(Joystick &stick,
+                                volatile bool &enterPressed,
+                                volatile bool &homePressed,
+                                volatile bool &backPressed)
+{
+    const char* menu[] = {"Play","High Score","How To Play","Story","Settings"};
+    int sel = 0;
+    // Loop until ENTER, HOME or BACK
+    while (!enterPressed && !homePressed && !backPressed) {
+        cls();
+        for (int i = 0; i < 5; i++) {
+            locate(0,i);
+            putc( i==sel ? '>' : ' ' );
+            printf("%s",menu[i]);
         }
+        ThisThread::sleep_for(100);
+        Direction d = stick.readDirection();
+        if (d==DIR_DOWN) sel=(sel+1)%5;
+        if (d==DIR_UP)   sel=(sel+4)%5;
+    }
+    currentSelection = menu[sel];
+}
 
-        //Displays the game instructions
-        void displayInstructions(){
-            lcd.cls();
-            lcd.locate(1,0);
-            printf("1.Select  Play");
-            displayChar(4,10,0);
-            lcd.locate(1,1);
-            lcd.printf("2.Select an");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("appropriate");
-            lcd.locate(3,1);
-            lcd.printf("game level");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(1,0);
-            lcd.printf("3.A sequence of");
-            lcd.locate(3,1);
-            lcd.printf("arrows will");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("be appeared on");
-            lcd.locate(3,1);
-            lcd.printf("the top");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("left corner of");
-            lcd.locate(3,1);
-            lcd.printf("the screen");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("once the game");
-            lcd.locate(3,1);
-            lcd.printf("starts.");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(1,0);
-            lcd.printf("You have to");
-            lcd.locate(3,1);
-            lcd.printf("remember the");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("sequence of");
-            lcd.locate(3,1);
-            lcd.printf("arrows");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(1,0);
-            lcd.printf("5.Then you have");
-            lcd.locate(3,1);
-            lcd.printf("to enter the");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("correct arrow");
-            lcd.locate(3,1);
-            lcd.printf("sequence by");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("using the joy");
-            lcd.locate(3,1);
-            lcd.printf("stick.");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(1,0);
-            lcd.printf("6.If you enter");
-            lcd.locate(3,1);
-            lcd.printf("the correct");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("sequence of");
-            lcd.locate(3,1);
-            lcd.printf("arrows, your");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("score will be");
-            lcd.locate(3,1);
-            lcd.printf("increased");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(1,0);
-            lcd.printf("7.If your arrow");
-            lcd.locate(3,1);
-            lcd.printf("sequence is");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("incorrect you");
-            lcd.locate(3,1);
-            lcd.printf("will not get");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("points and");
-            lcd.locate(3,1);
-            lcd.printf("the monsters");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("will get more");
-            lcd.locate(3,1);
-            lcd.printf("close to the");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("hero.");
-            lcd.locate(1,1);
-            lcd.printf("8.If monsters");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("get near the");
-            lcd.locate(3,1);
-            lcd.printf("hero you will");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("lose.");
-            lcd.locate(1,1);
-            lcd.printf("9.If you can");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("stay until");
-            lcd.locate(3,1);
-            lcd.printf("timer hits");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            lcd.locate(3,0);
-            lcd.printf("zero, you");
-            lcd.locate(3,1);
-            lcd.printf("will win");
-            thread_sleep_for(3000);
-            lcd.cls();
+void display::displayDifficultyPage(Joystick &stick, volatile bool &enterPressed, volatile bool &backPressed, volatile bool &homePressed) {
+    int selected = 1;
+    while (!enterPressed && !backPressed && !homePressed) {
+        cls();
+        locate(0,0); printf("Select Difficulty");
+        for (int i = 1; i <= 3; ++i) {
+            locate(4*i,1);
+            if (i == selected) printf("[%d]", i);
+            else printf(" %d ", i);
         }
+        ThisThread::sleep_for(150);
+        Direction dir = stick.readDirection();
+        if (dir == DIR_RIGHT && selected < 3) selected++;
+        else if (dir == DIR_LEFT && selected > 1) selected--;
+    }
+    level = selected;
+}
 
-        //Displays the game story
-        void displayStory(){
-            lcd.cls();
-            displayChar(2,0,0);
-            lcd.locate(1,0);
-            lcd.printf("This is year");
-            lcd.locate(1,1);
-            lcd.printf("3025. The world");
-            thread_sleep_for(3000);
-            lcd.cls();
+void display::displayHighScore(int score){
+    cls();
+    locate(1,0);
+    printf("This is your");
+    locate(1,1);
+    printf("high score:");
+    locate(12,1);
+    printf("%d",score);
+    thread_sleep_for(4000);
+    cls();
+}
 
-            displayChar(2,0,0);
-            lcd.locate(1,0);
-            lcd.printf("is in danger!");
-            thread_sleep_for(3000);
-            lcd.cls();
+void display::displayInstructions(Joystick &stick, volatile bool &enterPressed, volatile bool &backPressed, volatile bool &homePressed) {
+    const char* pages[] = {
+        "1.Select  Play\n2.Select an",
+        "appropriate\ngame level",
+        "3.A sequence of\narrows will",
+        "be appeared on\nthe top",
+        "left corner of\nthe screen",
+        "once the game\nstarts.",
+        "You have to\nremember the",
+        "sequence of\narrows",
+        "5.Then you have\nto enter the",
+        "correct arrow\nsequence by",
+        "using the joy\nstick.",
+        "6.If you enter\nthe correct",
+        "sequence of\narrows, your",
+        "score will be\nincreased",
+        "7.If your arrow\nsequence is",
+        "incorrect you\nwill not get",
+        "points and\nthe monsters",
+        "will get more\nclose to the",
+        "hero.\n8.If monsters",
+        "get near the\nhero you will",
+        "lose.\n9.If you can",
+        "stay until\ntimer hits",
+        "zero, you\nwill win"
+    };
+    int numPages = sizeof(pages)/sizeof(pages[0]);
+    int page = 0;
+    while (!enterPressed && !backPressed && !homePressed) {
+        cls();
+        locate(0,0);
+        printf("%s", pages[page]);
+        ThisThread::sleep_for(200);
+        Direction dir = stick.readDirection();
+        if (dir == DIR_RIGHT && page < numPages-1) page++;
+        else if (dir == DIR_LEFT && page > 0) page--;
+    }
+}
 
-            displayChar(2,0,0);
-            lcd.locate(1,0);
-            lcd.printf("Monsters came");
-            lcd.locate(1,1);
-            lcd.printf("to our planet");
-            thread_sleep_for(3000);
-            lcd.cls();
+void display::displayStory(Joystick &stick, volatile bool &enterPressed, volatile bool &backPressed, volatile bool &homePressed) {
+    const char* pages[] = {
+        "This is year\n3025. The world",
+        "is in danger!\nMonsters came",
+        "to our planet\nand started to",
+        "attack us...\nWe have to",
+        "fight back!\nHa...Ha...",
+        "We will destroy\nyour planet...",
+        "Ha...Ha...\nWe won't let",
+        "you do that...\nLet's see...",
+        "Ha...Ha...\nLet's save our",
+        "planet..."
+    };
+    int numPages = sizeof(pages)/sizeof(pages[0]);
+    int page = 0;
+    while (!enterPressed && !backPressed && !homePressed) {
+        cls();
+        locate(0,0);
+        printf("%s", pages[page]);
+        ThisThread::sleep_for(200);
+        Direction dir = stick.readDirection();
+        if (dir == DIR_RIGHT && page < numPages-1) page++;
+        else if (dir == DIR_LEFT && page > 0) page--;
+    }
+}
 
-            displayChar(2,0,0);
-            lcd.locate(1,0);
-            lcd.printf("and started to");
-            lcd.locate(1,1);
-            lcd.printf("attack us...");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            displayChar(2,0,0);
-            lcd.locate(1,0);
-            lcd.printf("We have to");
-            lcd.locate(1,1);
-            lcd.printf("fight back!");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            displayChar(3,15,0);
-            lcd.locate(1,0);
-            lcd.printf("Ha...Ha...");
-            lcd.locate(1,1);
-            lcd.printf("We will destroy");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            displayChar(3,15,0);
-            lcd.locate(1,0);
-            lcd.printf("your planet...");
-            lcd.locate(1,1);
-            lcd.printf("Ha...Ha...");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            displayChar(2,0,0);
-            lcd.locate(1,0);
-            lcd.printf("We won't let");
-            lcd.locate(1,1);
-            lcd.printf("you do that...");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            displayChar(3,15,0);
-            lcd.locate(1,0);
-            lcd.printf("Let's see...");
-            lcd.locate(1,1);
-            lcd.printf("Ha...Ha...");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            displayChar(2,0,0);
-            lcd.locate(1,0);
-            lcd.printf("Let's save our");
-            lcd.locate(1,1);
-            lcd.printf("planet...");
-            thread_sleep_for(3000);
-            lcd.cls();
-
-            displayChar(2,0,0);  displayChar(2,5,0);  displayChar(2,2,1);  displayChar(2,7,1);
-            displayChar(2,1,0);  displayChar(2,6,0);  displayChar(2,3,1);
-            displayChar(2,2,0);  displayChar(2,7,0);  displayChar(2,4,1);
-            displayChar(2,3,0);  displayChar(2,0,1);  displayChar(2,5,1);
-            displayChar(2,4,0);  displayChar(2,1,1);  displayChar(2,6,1);
-
-            displayChar(3,8,0);  displayChar(3,13,0);  displayChar(3,10,1);  displayChar(3,15,1);
-            displayChar(3,9,0);  displayChar(3,14,0);  displayChar(3,11,1);
-            displayChar(3,10,0);  displayChar(3,15,0);  displayChar(3,12,1);
-            displayChar(3,11,0);  displayChar(3,8,1);  displayChar(3,13,1);
-            displayChar(3,12,0);  displayChar(3,9,1);  displayChar(3,14,1);
+void display::displaySettings(Joystick &stick, volatile bool &enterPressed, volatile bool &backPressed, volatile bool &homePressed) {
+    const char* settings[] = {"Sound", "High Score"};
+    int numSettings = 2;
+    int selected = 0;
+    while (!enterPressed && !backPressed && !homePressed) {
+        cls();
+        for (int i = 0; i < numSettings; ++i) {
+            locate(0, i);
+            if (i == selected) printf(">");
+            else printf(" ");
+            printf("%s", settings[i]);
         }
+        ThisThread::sleep_for(150);
+        Direction dir = stick.readDirection();
+        if (dir == DIR_DOWN) selected = (selected + 1) % numSettings;
+        else if (dir == DIR_UP) selected = (selected - 1 + numSettings) % numSettings;
+    }
+    selectedSetting = settings[selected];
+    if (selectedSetting == "Sound") {
+        displaySoundScreen(stick, enterPressed, backPressed, homePressed);
+    } else if (selectedSetting == "High Score") {
+        displayHighScoreSettings(stick, enterPressed, backPressed, homePressed);
+    }
+}
 
-        //Displays the setting page
-        void displaySettings(){
-            lcd.cls();
-            lcd.locate(4,0);
-            lcd.printf("Sound");
-            lcd.locate(4,1);
-            lcd.printf("High Score");
-            displayChar(4,3,0);
-            displayChar(4,3,1);
-            flashArrow(2,0);
-            tempSelectedSetting = "Sound";
-            while(true){
-                if((joystick == "down") && (tempSelectedSetting == "Sound")){
-                    displayChar(10,2,0);
-                    flashArrow(2,1);
-                    tempSelectedSetting = "High Score";
-                }
-
-                if((joystick == "up") && (tempSelectedSetting == "High Score")){
-                    displayChar(10,2,1);
-                    flashArrow(2,0);
-                }
-
-                if(b1 == 1){
-                    selectedSetting = tempSelectedSetting;
-                    break;
-                }
-            }
+void display::displaySoundScreen(Joystick &stick, volatile bool &enterPressed, volatile bool &backPressed, volatile bool &homePressed) {
+    const char* options[] = {"On", "Off"};
+    int selected = (soundSetting == "On") ? 0 : 1;
+    while (!enterPressed && !backPressed && !homePressed) {
+        cls();
+        locate(0,0); printf("Sound");
+        for (int i = 0; i < 2; ++i) {
+            locate(4*i,1);
+            if (i == selected) printf("[%s]", options[i]);
+            else printf(" %s ", options[i]);
         }
+        ThisThread::sleep_for(150);
+        Direction dir = stick.readDirection();
+        if (dir == DIR_RIGHT && selected < 1) selected++;
+        else if (dir == DIR_LEFT && selected > 0) selected--;
+    }
+    soundSetting = options[selected];
+}
 
-        //Displays the sound settings page
-        void displaySoundScreen(){
-            string tempSoundSetting = "";
-            lcd.cls();
-            lcd.locate(0,0);
-            lcd.printf("Sound");
-            lcd.locate(4,1);
-            lcd.printf("On");
-            lcd.locate(11,1);
-            lcd.printf("Off");
-
-            flashArrow(3,1);
-            tempSoundSetting = "On";
-
-            while(true){
-                if((joystick == "right") && (soundSetting == "On")){
-                    displayChar(10,3,1);
-                    flashArrow(9,1);
-                    tempSoundSetting = "Off";
-                }
-
-                if((joystick == "left") && (soundSetting == "Off")){
-                    displayChar(10,9,1);
-                    flashArrow(3,1);
-                    tempSoundSetting = "On";
-                }
-
-                if(b1 == 1){
-                    SoundSetting = tempSoundSetting;
-                    break;
-                }
-            }
+void display::displayHighScoreSettings(Joystick &stick, volatile bool &enterPressed, volatile bool &backPressed, volatile bool &homePressed) {
+    const char* options[] = {"Reset", "Keep"};
+    int selected = (highScoreSetting == "Keep") ? 1 : 0;
+    while (!enterPressed && !backPressed && !homePressed) {
+        cls();
+        locate(0,0); printf("High Score");
+        for (int i = 0; i < 2; ++i) {
+            locate(4*i,1);
+            if (i == selected) printf("[%s]", options[i]);
+            else printf(" %s ", options[i]);
         }
+        ThisThread::sleep_for(150);
+        Direction dir = stick.readDirection();
+        if (dir == DIR_RIGHT && selected < 1) selected++;
+        else if (dir == DIR_LEFT && selected > 0) selected--;
+    }
+    highScoreSetting = options[selected];
+}
 
-        //Displays the high score settings page
-        void displayHighScoreSettings(){
-            string tempHighScoreSetting = "";
-            lcd.locate(0,0);
-            lcd.printf("High Score");
-            lcd.locate(3,1);
-            lcd.printf("Reset");
-            lcd.locate(12,1);
-            lcd.printf("Keep");
-            displayChar(4,2,1);
-            displayChar(4,11,1);
+void display::defaultDisplay(){
+    CustomCharDisplay::defaultDisplay();
+}
 
-            flashArrow(10,1);
-            tempHighScoreSetting = "Keep";
+void display::scoreUpdate(){
+    CustomCharDisplay::scoreUpdate();
+}
 
-            while(true){
-                if((joystick == "left") && (highScoreSetting == "Keep")){
-                    displayChar(10,10,1);
-                    flashArrow(1,1);
-                    tempHighScoreSetting = "Reset";
-                }
+void display::updateMonsters(){
+    CustomCharDisplay::updateMonsters();
+}
 
-                if((joystick == "right") && (soundSetting == "Reset")){
-                    displayChar(10,1,1);
-                    flashArrow(10,1);
-                    tempHighScoreSetting = "Keep";
-                }
+void display::displayGameOverScreen(int monsterNum) {
+    cls();
+    locate(0,0);
+    printf("GAME OVER");
+    locate(0,1);
+    printf("Monsters: %d", monsterNum);
+    thread_sleep_for(3000);
+    cls();
+}
 
-                if(b1 == 1){
-                    highScoreSetting = tempHighScoreSetting;
-                    break;
-                }
-            }
-        }
-};
+void display::displayWinScreen(int score) {
+    cls();
+    locate(0,0);
+    printf("YOU WIN!");
+    locate(0,1);
+    printf("Score: %d", score);
+    thread_sleep_for(3000);
+    cls();
+}
