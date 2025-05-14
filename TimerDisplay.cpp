@@ -1,9 +1,3 @@
-// -----------------------------------------------------------------------------------
-// Developed by Vishwa (Do not modify without prior discussion)
-// Last Modified : 09 April 2025 by author 
-// Please consult the original author before making any changes to ensure consistency
-// -----------------------------------------------------------------------------------
-
 #include "TimerDisplay.h"
 
 TimerDisplay::TimerDisplay(TextLCD &lcdRef)
@@ -46,5 +40,5 @@ void TimerDisplay::countdownLoop() {
 }
 
 int TimerDisplay::isFinished() {
-        return finishedFlag;
-    }
+    return finishedFlag;
+}
